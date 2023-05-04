@@ -113,7 +113,7 @@ INSERT INTO `pedido`(`id_pedido`, `id_usuario`, `fecha`, `descripcion`) VALUES
     (2,0,'2023-04-25','normal'),
     (3,5,'2023-04-25','sin jugo'),
     (4,4,'2023-04-27','normal'),
-    (5,6,'2023-04-27','si jugo'),
+    (5,6,'2023-04-27','sin jugo'),.
     (6,8,'2023-04-26','normal'),
     (7,9,'2023-04-28','sin jugo'),
     (8,7,'2023-05-01','normal'),
@@ -269,65 +269,33 @@ VALUES  (0,14,'nequi',22000),
         (13,11,'davidplata',22000),
         (14,13,'efectivo',17000);
 
--- consultas join: 
 
---1)en este join se unen las tablas factura y pago
-SELECT * FROM factura a lEFT JOIN pago b ON a.id_factura = b.id_pago
-UNION
-SELECT * FROM factura a RIGHT JOIN pago b ON a.id_factura = b.id_pago;
+-- consultas:
 
---2)en este join se unen las tablas tipo_producto y producto
-SELECT * FROM tipo_producto a lEFT JOIN producto b ON a.id_tipo_producto = b.id_producto
-UNION
-SELECT * FROM tipo_producto a RIGHT JOIN producto b ON a.id_tipo_producto= b.id_producto;
+-- Necesito obtener los valores totales más altos de las facturas correspondientes a la venta de 
+-- almuerzos en mi restaurante. Quiero tener una idea clara de cuáles son las ventas más importantes 
+-- y así poder tomar decisiones basadas en esta información
 
---3)en este join se busca entre la tabla pago y la tabla tipo producto se buscan los productos de la categoria de jugos
-SELECT * FROM producto JOIN tipo_producto ON producto.id_tipo_producto = tipo_producto.id_tipo_producto
-WHERE tipo_producto.categoria = 'jugos';
-
---4)-- en este join unimos las tablas que buscamos 
-SELECT * FROM usuario a lEFT JOIN pedido b ON a.id_usuario = b.id_pedido
-UNION
-SELECT * FROM usuario a RIGHT JOIN pedido b ON a.id_usuario = b.id_pedido;
---5)aqui se busca hacer union entre la tablas de pedido y ususario
-SELECT * FROM usuario  CROSS JOIN pedido;
-
---6)aqui aparece los datos de la tabla usuario y los datos que comparte con la tabla pedido
-SELECT * FROM usuario LEFT JOIN pedido ON usuario.id_usuario= pedido.id_pedido WHERE pedido.id_pedido ;
-
---7)En este join sacamos los datos de la tabla tipo de producto dependiendo que categoria escojamos
-SELECT * FROM producto JOIN tipo_producto ON producto.id_tipo_producto = tipo_producto.id_tipo_producto
-WHERE tipo_producto.categoria = 'sopas';
-
---8)este da una union entre almuerzo_dia y producto_almuerzo_dia
-SELECT * FROM almuerzo_dia  CROSS JOIN producto_almuerzo_dia;
-
---9)esta nos muestra la consulta en las dos tablas pero especificamente en los datos descripcion y total
-SELECT descripcion,total FROM pedido  CROSS JOIN factura;
-
---10)esta consula consulta corrsponde a la union entre usuario y factura con una tabla intermedia que es pedido con datos especifico para 
---su consulta
-SELECT u.nombre_usuario, p.descripcion, f.total
-FROM usuario u
-JOIN pedido p ON u.id_usuario = p.id_usuario
-JOIN factura f ON p.id_pedido = f.id_pedido;
-
-
---consultas:
-
---"esta consulta muestra los totales mas altos de la tabla de factura"
 SELECT * FROM factura WHERE total=(SELECT MAX(total)FROM factura);
 
---"esta consulta muestra los totales mas bajos de la tabla de factura"
+-- Necesito obtener los valores totales más altos de las facturas correspondientes a la venta de 
+-- almuerzos en mi restaurante. Quiero tener una idea clara de cuáles son las ventas más importantes 
+-- y así poder tomar decisiones basadas en esta información
+
 SELECT * FROM factura WHERE total=(SELECT MIN(total)FROM factura);
 
---"esta consulta corresponde a cuales productos de la tabla producto tiene la cantidad de disponibles mas alta"
+-- necesito comprar prodcutos y necesito tener encuenta que productos no debo comprar porque ya estan
+-- los suficientes
+
 SELECT * FROM producto WHERE cantidad_disponible = (SELECT MAX(cantidad_disponible) FROM producto);
 
---"esta consulta da el resultado de los productos de la tabla producto que tenga cantidad de disponibles menores a 35 unidades"
+-- necesito comprar prodcutos y necesito tener encuenta que productos que esten por una cantidad 
+-- inferior a 35 
+
 SELECT * FROM producto WHERE cantidad_disponible < 35;
 
---"esta consulta muestra el numero total de usuario registrados"
+-- queremos regalar una promocion a nuestros usuarios registrados pero antes necesitamos saber 
+-- la cantidad para asi tener una idea de cuanto se va a gastar 
 SELECT COUNT(*) AS total_usuarios FROM usuario;
 
 
@@ -335,15 +303,112 @@ SELECT COUNT(*) AS total_usuarios FROM usuario;
 SELECT metodo_pago, SUM(valor) AS total_pago FROM pago GROUP BY metodo_pago;
 
 
---"esta corresponde al cual es el numero total de facturas que se hicieron en esa fecha"
+
+-- cuento con pago erroneo de una factura y necesito filtara las facturas que se hicieron en una fecha
+-- determinada para poder resolver el problema 
+
 SELECT COUNT(*) AS total_facturas FROM factura  WHERE fecha = '2023-05-01';
 
---"esta muestra todos los usuarios que empiecen con la letra M"
+-- necesito buscar un usuario no recuerdo su nombre muy bien necesito hacer un filtro de nombres con 
+-- letra m
+
 SELECT * FROM usuario WHERE nombre_usuario LIKE 'M%';
 
---"se muestran cuales son las facturas que estan por encima de los 18000"
+-- necesito encontrar solo las facturas que esten por un rango superior a los 18000
 SELECT * FROM factura WHERE total > 18000;
 
---"esta obtiene los pedido que se hicieron en el mes 5"
+-- necesito descartar algunos productos para ello necesito saber que productos seleccionaron los 
+-- clientes en el mes numero 5
 SELECT fecha FROM pedido WHERE MONTH(fecha) = 5;
 
+
+
+-- consultas join: 
+
+/*1) aqui se busca conocer cual es el numero de productos que dispoonen de la mayor,menor y 
+media de las cantidades de unidades disponibles por los productos que estan registrasdos*/
+SELECT 
+  (SELECT COUNT(*) FROM producto WHERE cantidad_disponible = (SELECT MAX(cantidad_disponible) FROM producto)) AS cantidad_mayor,
+  (SELECT COUNT(*) FROM producto WHERE cantidad_disponible = (SELECT MIN(cantidad_disponible) FROM producto)) AS cantidad_menor,
+  COUNT(*) AS cantidad_entre
+FROM producto
+WHERE cantidad_disponible > (SELECT MIN(cantidad_disponible) FROM producto)
+  AND cantidad_disponible < (SELECT MAX(cantidad_disponible) FROM producto);
+
+
+/*2) en esta consulta se busca entre la tabla producto y la tabla tipo producto se buscan los productos que corresponden a la categoria de jugos
+(porque quiero saber cual o cuales son los jugos mas pedidos y cuales no tanto para saber a que jugos se debe aumentar las unidades para los clientes*/
+SELECT * FROM producto JOIN tipo_producto ON producto.id_tipo_producto = tipo_producto.id_tipo_producto
+WHERE tipo_producto.categoria = 'jugos';
+
+/* 3) en esta consulta entre la tabla usuario y pedido buscamos datos especificos entre las dos
+para conocer y saber que usuario pidio en cierta fecha(hay un problema con un pedido de un 
+cliente por ende necesito a los usuarios que pidieron en una cierta fecha logrando haci identificar y resolver
+el problema.)*/
+
+SELECT u.id_usuario, u.nombre_usuario, p.fecha
+FROM usuario u
+JOIN pedido p ON u.id_usuario = p.id_usuario;
+
+/* 4)aqui se busca hacer entre las dos tablas de factura y pago para buscar la factura y buscar 
+cual fue el metodo de pago que se uso para realizar el pago de la factura y visualizar el total
+que corresponde a esa factura*/
+SELECT f.id_factura, p.metodo_pago, f.total
+FROM factura f
+JOIN pago p ON f.id_factura = p.id_factura;
+
+
+/*5)Aquí lo que se busca hacer es juntar a los pedidos con las mismas descripcion y los demas pedidos que en su descripcion
+son distintos y de esa forma saber como los clientes hacen sus pedidos de la manera mas comun o popular.*/
+SELECT descripcion, COUNT(*) AS cantidad_pedidos
+FROM pedido
+GROUP BY descripcion;
+
+/*6)lo que se busca es poder conocer cuales son las sopas que estan disponibles para que de esa forma se pueda
+saber que sopas hay, para de esa manera poder cambiarlas y poder ofrecer nuevas sopas en un futuro */
+SELECT producto.nombre, producto.cantidad_disponible
+FROM producto 
+JOIN tipo_producto ON producto.id_tipo_producto = tipo_producto.id_tipo_producto
+WHERE tipo_producto.categoria = 'sopas';
+
+
+/*7)esta nos da el nombre de la persona que pidieron la misma descripcion en su pedido por ejemplo por clientes que hicieron su pedido sin jugo*/
+SELECT DISTINCT nombre_usuario FROM usuario JOIN pedido ON usuario.id_usuario = pedido.id_usuario WHERE descripcion = 'sin jugo';
+--SELECT DISTINCT se utiliza en una consulta para seleccionar solamente los valores distintos o únicos de una columna en una tabla
+
+
+-- 8) como aniversario de la empresa, queremos compensar a nuesteros clientes, debido a que 
+-- cumplimos cada 27 queremos regalar un premio al azar pero solo sera con lso usuarios que 
+-- han comprado aquel dia 27 de cualquier mes. el priero de los clientes que compre al dia 
+-- despues de la notificacion sera acredor del permio.
+
+SELECT usuario.nombre_usuario, pedido.fecha FROM usuario JOIN pedido ON usuario.id_usuario = pedido.id_usuario WHERE DAY(fecha) = 27
+
+/*9) necesitamos analizar cuales son los pedidos en los cuales las personas no prefieren un 
+tipo de alimento y por ende analizar si se les desconto correctamente un valor apropiado para
+su pedio.*/
+SELECT u.nombre_usuario, p.descripcion, f.total
+FROM usuario u
+JOIN pedido p ON u.id_usuario = p.id_usuario
+JOIN factura f ON p.id_pedido = f.id_pedido;
+
+/*10) aqui obtenes la tabla donde nos permite ver cuantas unidades quedan de cada producto registrado y cuantas de unidades de ese producto se usaron
+para que de esa forma se pueda llevar la cuenta de como se van gastando los productos mediante los pedidos de los almuerzos de vayan dando(tabla producto y tabla producto_almuerzo_dia)*/
+SELECT p.id_producto, p.nombre, MIN(pad.cantidad_disponible) AS cantidad_minima, (p.cantidad_disponible - MIN(pad.cantidad_disponible)) AS unidades_gastadas
+FROM producto_almuerzo_dia pad
+JOIN producto p ON pad.id_producto = p.id_producto
+GROUP BY p.id_producto, p.nombre;
+--otra forma de la tabla
+SELECT p.id_producto, p.nombre, MIN(pad.cantidad_disponible) AS cantidad_minima
+FROM producto_almuerzo_dia pad
+JOIN producto p ON pad.id_producto = p.id_producto
+GROUP BY p.id_producto, p.nombre;
+
+
+/*11)aqui lo que buscamos es conocer la descripcion de cada almuerzo y que nos brinde la cantidad o numero de prductos conforma a ese almuerzo
+para haci llevar una cuenta de cuanto productos se estan sirviendo por almuerzo*/
+SELECT ad.descripcion, COUNT(p.id_producto) AS cantidad_productos
+FROM almuerzo_dia ad
+JOIN producto_almuerzo_dia pad ON ad.id_almuerzo_dia = pad.id_almuerzo_dia
+JOIN producto p ON pad.id_producto = p.id_producto
+GROUP BY ad.descripcion;
