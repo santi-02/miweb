@@ -1,15 +1,15 @@
--- Creacion de base de datos
+- Creacion de base de datos
 
 CREATE DATABASE restaurantes;
 use restaurantes;
-
+-- c
 
 -- Creacion de tablas 
 
 CREATE TABLE usuario(
     id_usuario int(100) PRIMARY KEY,
-    nombre_usuario varchar(30),
-    cedula int(10)
+    nombre_usuario varchar(30) NOT NULL,
+    cedula int(10) NOT NULL
 );
 
 CREATE TABLE pedido(
@@ -25,9 +25,9 @@ CREATE TABLE factura(
     id_factura int(100) PRIMARY KEY,
     id_pedido int(100),
     fecha date,
-    subtotal int(6),
-    propina int(6),
-    total int(6),
+    subtotal DECIMAL(10, 2) NOT NULL,
+    propina DECIMAL(10, 2) NOT NULL,
+    total DECIMAL(10, 2) NOT NULL,
     FOREIGN KEY (id_pedido) REFERENCES pedido(id_pedido)
 );
 
@@ -35,21 +35,21 @@ CREATE TABLE pago(
     id_pago INT(100) PRIMARY KEY,
     id_factura INT(10),
     metodo_pago VARCHAR(20),
-    valor int (6),
+    valor DECIMAL(10, 2) NOT NULL,
     FOREIGN KEY (id_factura) REFERENCES factura(id_factura)
 );
 
 
 CREATE TABLE tipo_producto(
     id_tipo_producto INT(100) PRIMARY KEY,
-    categoria VARCHAR(20)
+    categoria VARCHAR(20) NOT NULL
 );
 
 CREATE TABLE producto(
     id_producto INT(100) PRIMARY KEY,
     id_tipo_producto INT(100),
-    nombre VARCHAR(20),
-    cantidad_disponible INT (20),
+    nombre VARCHAR(20) NOT NULL,
+    cantidad_disponible INT (20) NOT NULL,
     
     FOREIGN KEY (id_tipo_producto) REFERENCES tipo_producto(id_tipo_producto)
 );
@@ -65,7 +65,7 @@ CREATE TABLE producto_almuerzo_dia(
     id_producto_almuerzo_dia INT(100) PRIMARY KEY,
     id_almuerzo_dia INT(10),
     id_producto INT(10),
-    cantidad_disponible INT(3),	
+    cantidad_disponible INT(3) NOT NULL,		
 
     FOREIGN KEY (id_almuerzo_dia) REFERENCES almuerzo_dia(id_almuerzo_dia),
     FOREIGN KEY (id_producto) REFERENCES producto (id_producto)
@@ -299,7 +299,7 @@ SELECT * FROM producto WHERE cantidad_disponible < 35;
 SELECT COUNT(*) AS total_usuarios FROM usuario;
 
 
---"esta tiene el objetivo de mostrar la suma total con cada metodo de pago "
+"esta tiene el objetivo de mostrar la suma total con cada metodo de pago "
 SELECT metodo_pago, SUM(valor) AS total_pago FROM pago GROUP BY metodo_pago;
 
 
@@ -337,7 +337,7 @@ WHERE cantidad_disponible > (SELECT MIN(cantidad_disponible) FROM producto)
 
 
 /*2) en esta consulta se busca entre la tabla producto y la tabla tipo producto se buscan los productos que corresponden a la categoria de jugos
-(porque quiero saber cuantas unidades de cada jugo hay para poder ofrecerle al cliente el jugo sin que este puda ser que ya se acabo*/
+(porque quiero saber cual o cuales son los jugos mas pedidos y cuales no tanto para saber a que jugos se debe aumentar las unidades para los clientes*/
 SELECT * FROM producto JOIN tipo_producto ON producto.id_tipo_producto = tipo_producto.id_tipo_producto
 WHERE tipo_producto.categoria = 'jugos';
 
@@ -352,7 +352,7 @@ JOIN pedido p ON u.id_usuario = p.id_usuario;
 
 /* 4)aqui se busca hacer entre las dos tablas de factura y pago para buscar la factura y buscar 
 cual fue el metodo de pago que se uso para realizar el pago de la factura y visualizar el total
-que corresponde a esa factura del cliente*/
+que corresponde a esa factura*/
 SELECT f.id_factura, p.metodo_pago, f.total
 FROM factura f
 JOIN pago p ON f.id_factura = p.id_factura;
@@ -364,8 +364,8 @@ SELECT descripcion, COUNT(*) AS cantidad_pedidos
 FROM pedido
 GROUP BY descripcion;
 
-/*6)lo que se busca es poder conocer cuales son las sopas que estan disponibles y sus unidades que se pueden ofrecer a los clientes ,y porque puede llegar
-el caso de querer cambiar una o varias sopas y para no repetirla se debemos saber que sopas estamos ofreciendo*/
+/*6)lo que se busca es poder conocer cuales son las sopas que estan disponibles para que de esa forma se pueda
+saber que sopas hay, para de esa manera poder cambiarlas y poder ofrecer nuevas sopas en un futuro */
 SELECT producto.nombre, producto.cantidad_disponible
 FROM producto 
 JOIN tipo_producto ON producto.id_tipo_producto = tipo_producto.id_tipo_producto
@@ -386,7 +386,7 @@ SELECT usuario.nombre_usuario, pedido.fecha FROM usuario JOIN pedido ON usuario.
 
 /*9) necesitamos analizar cuales son los pedidos en los cuales las personas no prefieren un 
 tipo de alimento y por ende analizar si se les desconto correctamente un valor apropiado para
-su pedido.*/
+su pedio.*/
 SELECT u.nombre_usuario, p.descripcion, f.total
 FROM usuario u
 JOIN pedido p ON u.id_usuario = p.id_usuario
@@ -398,7 +398,7 @@ SELECT p.id_producto, p.nombre, MIN(pad.cantidad_disponible) AS cantidad_minima,
 FROM producto_almuerzo_dia pad
 JOIN producto p ON pad.id_producto = p.id_producto
 GROUP BY p.id_producto, p.nombre;
---otra forma de la tabla
+
 SELECT p.id_producto, p.nombre, MIN(pad.cantidad_disponible) AS cantidad_minima
 FROM producto_almuerzo_dia pad
 JOIN producto p ON pad.id_producto = p.id_producto
